@@ -1,2 +1,4 @@
 github.com/thereisnoplanb/generic v0.0.0-20250206191606-22d05cf4b873 h1:4WFMsO6LqfC3XO8n8lr3OqKviE7LraHyZTm6Pm6Jssw=
 github.com/thereisnoplanb/generic v0.0.0-20250206191606-22d05cf4b873/go.mod h1:1BegUv2b1buXj+MRrMMyTylKWGC+ggkYFnTA8Qh+WFE=
+github.com/thereisnoplanb/generic v0.0.0-20250301193755-df5ea199f5ae h1:exRnGY9S42O2ewHyqGxzs+4kO7QLoVjWcD5V/hs9/tE=
+github.com/thereisnoplanb/generic v0.0.0-20250301193755-df5ea199f5ae/go.mod h1:1BegUv2b1buXj+MRrMMyTylKWGC+ggkYFnTA8Qh+WFE=
