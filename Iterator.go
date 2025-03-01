@@ -29,7 +29,9 @@ type Iterator[TSource any] iter.Seq[TSource]
 //
 // # Returns
 //
-//	result TSource - The final accumulator value.
+//	result TSource
+//
+// The final accumulator value.
 func (source Iterator[TSource]) Aggregate(seed TSource, accumulator generic.Accumulator[TSource, TSource], resultSelector ...func(TSource) TSource) (result TSource) {
 	result = seed
 	for item := range source {
@@ -99,7 +101,9 @@ func (source Iterator[TSource]) All(predicate generic.Predicate[TSource]) (resul
 //
 // # Parameters
 //
-//	predicate generic.Predicate[TSource] - A function to test each element for a condition.
+//	predicate generic.Predicate[TSource]
+//
+// A function to test each element for a condition.
 //
 // # Returns
 //
@@ -168,7 +172,7 @@ func (source Iterator[TSource]) Append(elements ...TSource) (result Iterator[TSo
 //
 //	err error
 //
-// linq.ErrSourceContainsNoElements if source contains no elements.
+//	linq.ErrSourceContainsNoElements - When source contains no elements.
 func Average[TSource generic.Real](source Iterator[TSource]) (result float64, err error) {
 	count := 0
 	var sum TSource
@@ -461,7 +465,7 @@ func (source Iterator[TSource]) Distinct(comparer ...generic.Equality[TSource]) 
 //
 //	err error
 //
-// ErrIndexOutOfRange when index is less than 0 or greater than or equal to the number of elements in source.
+//	linq.ErrIndexOutOfRange - When index is less than 0 or greater than or equal to the number of elements in source.
 func (source Iterator[TSource]) ElementAt(index int) (result TSource, err error) {
 	if index < 0 {
 		return result, ErrIndexOutOfRange
@@ -614,9 +618,9 @@ func (source Iterator[TSource]) Except(sequence Iterator[TSource], comparer ...g
 //
 //	err error
 //
-// ErrSourceContainsNoElements - When sequence contains no elelements,
+// linq.ErrSourceContainsNoElements - When sequence contains no elelements,
 //
-// ErrNoElementSatisfiesTheConditionInPredicate - When sequence contains elements but none of them passes the test in the specified predicate function if passed.
+// linq.ErrNoElementSatisfiesTheConditionInPredicate - When sequence contains elements but none of them passes the test in the specified predicate function if passed.
 func (source Iterator[TSource]) First(predicate ...generic.Predicate[TSource]) (result TSource, err error) {
 	if len(predicate) > 0 && predicate[0] != nil {
 		Predicate := predicate[0]
@@ -1633,13 +1637,13 @@ func (source Iterator[TSource]) SequenceEqual(sequence Iterator[TSource], compar
 //
 //	err error
 //
-// ErrSourceContainsNoElements - When the input sequence is empty.
+// linq.ErrSourceContainsNoElements - When the input sequence is empty.
 //
-// ErrSourceHasMoreThanOneElement - When the input sequence has more then one element, predicate is not passed.
+// linq.ErrSourceHasMoreThanOneElement - When the input sequence has more then one element, predicate is not passed.
 //
-// ErrNoElementSatisfiesTheConditionInPredicate - When the input sequence contains no element that satifies a conditoin in passed predidate.
+// linq.ErrNoElementSatisfiesTheConditionInPredicate - When the input sequence contains no element that satifies a conditoin in passed predidate.
 //
-// ErrMoreThanOneElementSatisfiesTheConditionInPredicate - When the input sequence contains more than one element that satisfies a condition in passed predicate.
+// linq.ErrMoreThanOneElementSatisfiesTheConditionInPredicate - When the input sequence contains more than one element that satisfies a condition in passed predicate.
 func (source Iterator[TSource]) Single(predicate ...generic.Predicate[TSource]) (result TSource, err error) {
 	found := false
 	any := false
