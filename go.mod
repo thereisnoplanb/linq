@@ -1,4 +1,4 @@
-module github.com/therisnoplanb/linq
+module github.com/thereisnoplanb/linq
 
 go 1.24
 
