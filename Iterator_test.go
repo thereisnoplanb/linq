@@ -293,6 +293,77 @@ func TestIterator_Append(t *testing.T) {
 	}
 }
 
+func Test_Chunk(t *testing.T) {
+	type args struct {
+		iterator Iterator[int]
+		size     int
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantResult [][]int
+	}{
+		{
+			name: "Chunk, empty source",
+			args: args{
+				iterator: FromSlice([]int{}),
+				size:     4,
+			},
+			wantResult: [][]int{},
+		},
+		{
+			name: "Chunk, len < size",
+			args: args{
+				iterator: FromSlice([]int{1, 2, 3}),
+				size:     4,
+			},
+			wantResult: [][]int{
+				{1, 2, 3},
+			},
+		},
+		{
+			name: "Chunk, len == size",
+			args: args{
+				iterator: FromSlice([]int{1, 2, 3, 4}),
+				size:     4,
+			},
+			wantResult: [][]int{
+				{1, 2, 3, 4},
+			},
+		},
+		{
+			name: "Chunk, len > size, len = n*size + m, m == 0",
+			args: args{
+				iterator: FromSlice([]int{1, 2, 3, 4, 5, 6, 7, 8}),
+				size:     4,
+			},
+			wantResult: [][]int{
+				{1, 2, 3, 4},
+				{5, 6, 7, 8},
+			},
+		},
+		{
+			name: "Chunk, len > size, len = n*size + m, m != 0",
+			args: args{
+				iterator: FromSlice([]int{1, 2, 3, 4, 5, 6, 7, 8, 9}),
+				size:     4,
+			},
+			wantResult: [][]int{
+				{1, 2, 3, 4},
+				{5, 6, 7, 8},
+				{9},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotResult := Chunk(tt.args.iterator, tt.args.size).ToSlice(); !reflect.DeepEqual(gotResult, tt.wantResult) {
+				t.Errorf("Chunk() = %v, want %v", gotResult, tt.wantResult)
+			}
+		})
+	}
+}
+
 func TestIterator_Concat(t *testing.T) {
 	type args struct {
 		source   Iterator[int]

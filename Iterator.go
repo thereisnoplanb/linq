@@ -213,27 +213,54 @@ func Cast[TSource any, TResult any](source Iterator[TSource]) (result Iterator[T
 	}
 }
 
-// func (source Iterator[TSource]) Chunk(size int) (result Iterator[Iterator[TSource]]) {
-// 	if size < 1 {
-// 		panic(ErrSizeIsBelowOne)
-// 	}
-// 	return func(yield func(value Iterator[TSource]) bool) {
-// 		slice := make([]TSource, 0)
-// 		for item := range source {
-// 			slice = append(slice, item)
-// 		}
-// 		iterators := make([]Iterator[TSource], 0)
-// 		for i := 0; i < len(slice); i += size {
-// 			end := min(size, len(slice[i:]))
-// 			iterators = append(iterators, FromSlice(slice[i:i+end:i+end]))
-// 		}
-// 		for _, iterator := range iterators {
-// 			if !yield(iterator) {
-// 				return
-// 			}
-// 		}
-// 	}
-// }
+// Splits the elements of a sequence into chunks of size at most <size>.
+//
+// # Parameters
+//
+//	source Iterator[TSource]
+//
+// An Iterator[TSource] whose elements to chunk.
+//
+//	size int
+//
+// The maximum size of each chunk.
+//
+// # Returns
+//
+//	result Iterator[[]TSource]
+//
+// An Iterator[[]TSource] that contains the elements the input sequence split into chunks of size <size>.
+//
+// # Remarks
+//
+// Each chunk except the last one will be of size <size>. The last chunk will contain the remaining elements and may be of a smaller size.
+//
+// Panics when <size> is below 1.
+func Chunk[TSource any](source Iterator[TSource], size int) (result Iterator[[]TSource]) {
+	if size < 1 {
+		panic(ErrSizeIsBelowOne)
+	}
+	return func(yield func(value []TSource) bool) {
+		chunk := make([]TSource, size)
+		i := 0
+		for item := range source {
+			chunk[i] = item
+			i++
+			if i == size {
+				if !yield(chunk) {
+					return
+				}
+				chunk = make([]TSource, size)
+				i = 0
+			}
+		}
+		if i > 0 {
+			if !yield(chunk[:i:i]) {
+				return
+			}
+		}
+	}
+}
 
 // Concatenates two sequences.
 //
