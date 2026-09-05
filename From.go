@@ -1,8 +1,11 @@
 package linq
 
-import "github.com/thereisnoplanb/generic"
+import (
+	"context"
+	"iter"
+)
 
-// Returns the input typed as Iterator[TSource].
+// Returns the input slice as an Enumerable[TSource].
 //
 // # Parameters
 //
@@ -12,86 +15,83 @@ import "github.com/thereisnoplanb/generic"
 //
 // # Returns
 //
-//	result Iterator[TSource]
+//	result Enumerable[TSource]
 //
-// The input sequence typed as Iterator[TSource].
-func FromSlice[TSlice ~[]TSource, TSource any](source TSlice) Iterator[TSource] {
-	return func(yield func(value TSource) bool) {
-		for _, value := range source {
-			if !yield(value) {
-				return
+// The input slice represented as an Enumerable[TSource].
+func FromSlice[TSlice ~[]TSource, TSource any](source TSlice) Enumerable[TSource] {
+	return Enumerable[TSource]{
+		enumerable: func(yield func(value TSource) bool) {
+			for _, value := range source {
+				if !yield(value) {
+					return
+				}
 			}
-		}
+		},
 	}
 }
 
-// Returns the input typed as Iterator[TSource].
-//
-// # Parameters
-//
-//	source Iterator[TSource]
-//
-// The sequence of TSource.
-//
-// # Returns
-//
-//	result Iterator[TSource]
-//
-// The input sequence typed as Iterator[TSource].
-func FromIterator[TSource any](source Iterator[TSource]) Iterator[TSource] {
-	return source
-}
-
-// Returns the input typed as Iterator[generic.KeyValuePair[TKey, TValue]].
+// Returns the input map as an Enumerable[KeyValuePair[TKey, TValue]].
 //
 // # Parameters
 //
 //	source map[TKey]TValue
 //
-// The sequence of generic.KeyValuePair[TKey, TValue].
+// The input map represented as an Enumerable[KeyValuePair[TKey, TValue]].
 //
 // # Returns
 //
-//	result Iterator[generic.KeyValuePair[TKey, TValue]]
+//	result Enumerable[KeyValuePair[TKey, TValue]]
 //
-// The input sequence typed as Iterator[generic.KeyValuePair[TKey, TValue]].
-func FromMap[TMap ~map[TKey]TValue, TKey comparable, TValue any](source TMap) Iterator[generic.KeyValuePair[TKey, TValue]] {
-	return func(yield func(value generic.KeyValuePair[TKey, TValue]) bool) {
-		for key, value := range source {
-			if !yield(generic.KeyValuePair[TKey, TValue]{
-				Key:   key,
-				Value: value,
-			}) {
-				return
+// The input map represented as an Enumerable[KeyValuePair[TKey, TValue]].
+//
+// # Remarks
+//
+// Map iteration order is not specified by Go.
+func FromMap[TMap ~map[TKey]TValue, TKey comparable, TValue any](source TMap) Enumerable[KeyValuePair[TKey, TValue]] {
+	return Enumerable[KeyValuePair[TKey, TValue]]{
+		enumerable: func(yield func(value KeyValuePair[TKey, TValue]) bool) {
+			for key, value := range source {
+				if !yield(KeyValuePair[TKey, TValue]{
+					Key:   key,
+					Value: value,
+				}) {
+					return
+				}
 			}
-		}
+		},
 	}
 }
 
-// Returns the input typed as Iterator[rune].
+// Returns the runes in the input string as an Enumerable[rune].
 //
 // # Parameters
 //
 //	source string
 //
-// The sequence of runes.
+// The input string represented as an Enumerable[rune].
 //
 // # Returns
 //
-//	result Iterator[rune]
+//	result Enumerable[rune]
 //
-// The input sequence typed as Iterator[rune].
-func FromString(source string) Iterator[rune] {
-	return func(yield func(value rune) bool) {
-		for _, value := range source {
-			if !yield(value) {
-				return
+// The input string represented as an Enumerable[rune].
+//
+// # Remarks
+//
+// Invalid UTF-8 bytes in the string are decoded according to Go's range-over-string behavior.
+func FromString(source string) Enumerable[rune] {
+	return Enumerable[rune]{
+		enumerable: func(yield func(value rune) bool) {
+			for _, value := range source {
+				if !yield(value) {
+					return
+				}
 			}
-		}
+		},
 	}
 }
 
-// Generates a sequence that contains one repeated value.
+// Returns an Enumerable[TSource] that contains one repeated value.
 //
 // # Parameters
 //
@@ -104,21 +104,27 @@ func FromString(source string) Iterator[rune] {
 // The number of times to repeat the value in the generated sequence.
 // # Returns
 //
-//	result Iterator[TSource]
+//	result Enumerable[TSource]
 //
-// An Iterator[TSource] that contains a repeated value.
-func Repeat[TSource any](element TSource, count int) Iterator[TSource] {
-	return func(yield func(value TSource) bool) {
-		for count > 0 {
-			if !yield(element) {
-				return
+// An Enumerable[TSource] that contains a repeated value.
+//
+// # Remarks
+//
+// If count is less than or equal to zero, the result is empty.
+func Repeat[TSource any](element TSource, count int) Enumerable[TSource] {
+	return Enumerable[TSource]{
+		enumerable: func(yield func(value TSource) bool) {
+			for count > 0 {
+				if !yield(element) {
+					return
+				}
+				count--
 			}
-			count--
-		}
+		},
 	}
 }
 
-// Generates a sequence of integral numbers within a specified range.
+// Returns a sequence of integral numbers within a specified range.
 //
 // # Parameters
 //
@@ -130,19 +136,168 @@ func Repeat[TSource any](element TSource, count int) Iterator[TSource] {
 //
 // The number of sequential integers to generate.
 //
+//	step int [OPTIONAL]
+//
+// The increment between each integer in the sequence. If omitted, the default is 1. [OPTIONAL]
+//
 // # Returns
 //
-//	result Iterator[int]
+//	result Enumerable[int]
 //
-// An Iterator[int] that contains a range of sequential integral numbers.
-func Range(start int, count int) Iterator[int] {
-	return func(yield func(value int) bool) {
-		for count > 0 {
-			if !yield(start) {
-				return
+// An Enumerable[int] that contains a range of sequential integral numbers.
+//
+// # Remarks
+//
+// If count is less than or equal to zero, the result is empty.
+// A zero step produces the same value repeatedly.
+func Range(start int, count int, step ...int) Enumerable[int] {
+	increment := 1
+	if len(step) > 0 {
+		increment = step[0]
+	}
+	return Enumerable[int]{
+		enumerable: func(yield func(value int) bool) {
+			for count > 0 {
+				if !yield(start) {
+					return
+				}
+				start += increment
+				count--
 			}
-			start++
-			count--
-		}
+		},
+	}
+}
+
+// Returns an infinite sequence of values that are generated by a seed value and an increment function.
+//
+// # Parameters
+//
+//	ctx context.Context
+//
+// The context to control the lifetime of the sequence.
+//
+//	seed TSource
+//
+// The initial value of the sequence.
+//
+//	next Value[TSource, TSource]
+//
+// A function that generates the next value in the sequence based on the current value.
+//
+// # Returns
+//
+//	result Enumerable[TSource]
+//
+// An Enumerable[TSource] that yields seed followed by successive values
+// produced by next.
+//
+// # Remarks
+//
+// The sequence stops when ctx is canceled or when iteration is stopped by the
+// consumer. The selector is not called after either condition occurs.
+func Infinite[TSource any](ctx context.Context, seed TSource, next Value[TSource, TSource]) Enumerable[TSource] {
+	return Enumerable[TSource]{
+		enumerable: func(yield func(value TSource) bool) {
+			item := seed
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					if !yield(item) {
+						return
+					}
+					item = next(item)
+				}
+			}
+		},
+	}
+}
+
+// Returns an Enumerable[TSource] produced by reading values from a channel.
+//
+// # Parameters
+//
+//	ctx context.Context
+//
+// The context used to stop iteration when the sequence is canceled.
+//
+//	source <-chan TSource
+//
+// The channel that provides the source values.
+//
+// # Returns
+//
+//	result Enumerable[TSource]
+//
+// An Enumerable[TSource] that yields values from the channel until it is closed or the context is canceled.
+//
+// # Remarks
+//
+// The sequence stops when ctx is canceled or when the channel is closed.
+func FromChannel[TSource any](ctx context.Context, source <-chan TSource) Enumerable[TSource] {
+	return Enumerable[TSource]{
+		enumerable: func(yield func(value TSource) bool) {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case item, ok := <-source:
+					if !ok {
+						return
+					}
+					if !yield(item) {
+						return
+					}
+				}
+			}
+		},
+	}
+}
+
+// Returns an Enumerable[TSource] from a Go iterator sequence.
+//
+// # Parameters
+//
+//	source iter.Seq[TSource]
+//
+// The iterator sequence to convert into an Enumerable.
+//
+// # Returns
+//
+//	result Enumerable[TSource]
+//
+// An Enumerable[TSource] that iterates the values produced by the input sequence.
+func FromIterator[TSource any](source iter.Seq[TSource]) Enumerable[TSource] {
+	return Enumerable[TSource]{
+		enumerable: enumerable[TSource](source),
+	}
+}
+
+// Returns an Enumerable[KeyValuePair[TKey, TValue]] from a Go key-value iterator sequence.
+//
+// # Parameters
+//
+//	source iter.Seq2[TKey, TValue]
+//
+// The iterator sequence that yields key-value pairs.
+//
+// # Returns
+//
+//	result Enumerable[KeyValuePair[TKey, TValue]]
+//
+// An Enumerable[KeyValuePair[TKey, TValue]] that contains the key-value pairs from the input iterator.
+func FromKeyValueIterator[TKey any, TValue any](source iter.Seq2[TKey, TValue]) Enumerable[KeyValuePair[TKey, TValue]] {
+	return Enumerable[KeyValuePair[TKey, TValue]]{
+		enumerable: func(yield func(value KeyValuePair[TKey, TValue]) bool) {
+			for key, value := range source {
+				if !yield(KeyValuePair[TKey, TValue]{
+					Key:   key,
+					Value: value,
+				}) {
+					return
+				}
+			}
+		},
 	}
 }

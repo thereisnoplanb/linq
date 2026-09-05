@@ -1,2 +1,2 @@
-github.com/thereisnoplanb/generic v0.0.0-20250301193755-df5ea199f5ae h1:exRnGY9S42O2ewHyqGxzs+4kO7QLoVjWcD5V/hs9/tE=
-github.com/thereisnoplanb/generic v0.0.0-20250301193755-df5ea199f5ae/go.mod h1:1BegUv2b1buXj+MRrMMyTylKWGC+ggkYFnTA8Qh+WFE=
+golang.org/x/exp v0.0.0-20260820142414-ca536658362e h1:01Ju2A/fZKkci4zqx0eZxw//DnRYOnBiGJG14hFBhO8=
+golang.org/x/exp v0.0.0-20260820142414-ca536658362e/go.mod h1:zeBbvyFKDaLwa7CH/zI8KXt7gTl14SF7sO08Pl5jBCM=
