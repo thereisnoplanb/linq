@@ -1,5 +1,5 @@
 module github.com/thereisnoplanb/linq
 
-go 1.27
+go 1.27.1
 
-require golang.org/x/exp v0.0.0-20260820142414-ca536658362e
+require golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa
